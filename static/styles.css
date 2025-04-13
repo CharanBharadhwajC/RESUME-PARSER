@@ -1,0 +1,73 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f9fafb; /* pale white background */
+  margin: 0;
+  padding: 0;
+  color: #1f2937;
+}
+
+.container {
+  max-width: 900px;
+  margin: 50px auto;
+  padding: 30px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+h1, h2 {
+  color: #2563eb;
+  margin-bottom: 20px;
+}
+
+.card {
+  padding: 20px;
+  background: #e0ecff;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="file"] {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 5px 6px;
+  transition: 0.3s ease;
+}
+
+button:hover {
+  background-color: #1e4db7;
+}
+
+button.red {
+  background-color: #ef4444;
+}
+
+button.red:hover {
+  background-color: #dc2626;
+}
+
+#userId, #scoreDisplay {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 10px 0;
+}
+
+.actions {
+  margin-top: 10px;
+}

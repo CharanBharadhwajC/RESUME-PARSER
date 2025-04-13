@@ -1,0 +1,7 @@
+python-docx
+PyPDF2
+docx2txt
+fuzzywuzzy
+scikit-learn
+joblib
+pandas

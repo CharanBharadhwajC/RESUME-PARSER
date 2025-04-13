@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Portal</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">Resume Upload Portal</h1>
+
+    <div class="card">
+      <h2>Upload Your Resume</h2>
+      <input type="file" id="resumeFile" />
+      <button onclick="uploadResume()">Upload</button>
+      <p id="userId"></p>
+    </div>
+
+    <div class="card">
+      <h2>Manage Your Resume</h2>
+      <input type="text" id="accessId" placeholder="Enter your User ID" />
+      <div class="button-group">
+        <button onclick="downloadFile()">Download</button>
+        <button onclick="deleteFile()">Delete</button>
+        <button onclick="checkScore()">Check Score</button>
+      </div>
+      <p id="scoreDisplay"></p>
+      <p id="message" style="color: green; font-weight: bold;"></p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HR Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">HR Dashboard</h1>
+
+    <div class="button-group">
+      <button onclick="filterBy('fuzzy')">Filter Fuzzy > 7</button>
+      <button onclick="filterBy('ann')">Filter ANN > 7</button>
+      <button onclick="resetFilter()">Show All</button>
+    </div>
+
+    {% if files %}
+      {% for file in files %}
+        <div class="card">
+          <p><strong>User ID:</strong> {{ file.id }}</p>
+          <p><strong>Filename:</strong> <a href="/uploads/{{ file.filename }}" target="_blank">{{ file.filename }}</a></p>
+          <p><strong>Fuzzy Score:</strong> <span class="fuzzy">{{ file.suggested_score }}</span>/10</p>
+          <p><strong>ANN Score:</strong> <span class="ann">{{ file.ann_score }}</span>/10</p>
+          <p><strong>HR Score:</strong> {{ file.score if file.score != 'Not yet scored' else 'Not yet scored' }}</p>
+
+          <input type="number" min="0" max="10" step="0.1" id="score-{{ file.id }}" placeholder="Enter score" class="score-input" />
+
+          <div class="button-group">
+            <button onclick="submitScore('{{ file.id }}')">Submit Score</button>
+            <button onclick="downloadResume('{{ file.id }}')">Download</button>
+            <button onclick="deleteResume('{{ file.id }}')">Delete</button>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>No resumes uploaded yet.</p>
+    {% endif %}
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
