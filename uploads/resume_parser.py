@@ -14,7 +14,10 @@ def extract_resume_features(file_path):
     text = extract_text_from_file(file_path).lower()  # Case-insensitive
 
     # Keywords to match
-    keywords = ['python', 'machine learning', 'deep learning', 'flask', 'django', 'nlp', 'git', 'sql', 'cloud', 'api']
+    keywords = [
+        'python', 'machine learning', 'deep learning', 'flask',
+        'django', 'nlp', 'git', 'sql', 'cloud', 'api'
+    ]
     
     # Count word frequency
     word_list = re.findall(r'\w+', text)  # Extract words only (ignores punctuation)
@@ -25,13 +28,13 @@ def extract_resume_features(file_path):
     max_possible_weight = len(keywords) * 5  # Assume max 5 points per keyword
     skills_match = min((total_weight / max_possible_weight) * 10, 10)
 
-    # Extract experience years
+    # Extract years of experience
     exp_matches = re.findall(r'(\d+)\+?\s*(?:year|years)', text)
     experience_years = max([int(x) for x in exp_matches], default=0)
     experience_score = min(experience_years, 10)
 
     # Education scoring
-    education_level = 3  # Default
+    education_level = 3  # Default level
     if 'phd' in text:
         education_level = 10
     elif 'master' in text:

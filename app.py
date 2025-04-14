@@ -1,31 +1,42 @@
 import os
 import uuid
 import json
-from flask import Flask, render_template, request, send_from_directory, jsonify
+from flask import Flask, render_template, request, send_from_directory, jsonify, redirect, url_for, Response
 from werkzeug.utils import secure_filename
 from fuzzy_logic import calculate_fuzzy_score
 from uploads.ann_predictor import predict_ann_score_from_resume
 
 app = Flask(__name__)
 
+# Constants
 UPLOAD_FOLDER = 'uploads'
 SCORES_FILE = 'scores.json'
 FUZZY_FILE = 'fuzzy_scores.json'
 ANN_FILE = 'ann_scores.json'
+PASSCODE = "VIT$$Welcome"
 
+# Ensure necessary directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Load or create score dictionaries
+# Safe JSON loader
 def load_json(path):
-    return json.load(open(path)) if os.path.exists(path) else {}
+    if os.path.exists(path):
+        try:
+            with open(path, 'r') as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            print(f"[Warning] {path} is empty or corrupted. Resetting.")
+            return {}
+    return {}
 
+# Load existing data
 scores = load_json(SCORES_FILE)
 fuzzy_scores = load_json(FUZZY_FILE)
 ann_scores = load_json(ANN_FILE)
 
 @app.route('/')
 def index():
-    return 'Welcome to the Resume Screening System!'
+    return render_template('index.html')
 
 @app.route('/user')
 def user_page():
@@ -46,6 +57,10 @@ def hr_dashboard():
             })
     return render_template('hr.html', files=files)
 
+@app.route('/admin')
+def admin_page():
+    return render_template('admin.html')
+
 @app.route('/upload', methods=['POST'])
 def upload():
     file = request.files['resume']
@@ -55,13 +70,13 @@ def upload():
         file_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(file_path)
 
-        # Fuzzy logic score
+        # Fuzzy score
         fuzzy = calculate_fuzzy_score(file_path)
         fuzzy_scores[uid] = fuzzy
         with open(FUZZY_FILE, 'w') as f:
             json.dump(fuzzy_scores, f)
 
-        # ANN score using real features
+        # ANN score
         ann = predict_ann_score_from_resume(file_path)
         ann_scores[uid] = ann
         with open(ANN_FILE, 'w') as f:
@@ -86,6 +101,7 @@ def delete(uid):
             deleted = True
             break
 
+    # Remove from JSON
     for db, path in [(scores, SCORES_FILE), (fuzzy_scores, FUZZY_FILE), (ann_scores, ANN_FILE)]:
         db.pop(uid, None)
         with open(path, 'w') as f:
@@ -112,15 +128,47 @@ def submit_score(uid):
         return jsonify({'message': 'Score submitted successfully'})
     return 'Invalid score', 400
 
+@app.route('/export-csv')
+def export_csv():
+    try:
+        with open(SCORES_FILE, 'r') as f:
+            scores_data = json.load(f)
+    except FileNotFoundError:
+        return "No scores found!", 404
+
+    def generate():
+        data = [['User ID', 'Manual Score', 'Fuzzy Score', 'ANN Score']]
+        for user_id in scores_data:
+            data.append([
+                user_id,
+                scores_data.get(user_id, 'N/A'),
+                fuzzy_scores.get(user_id, '0'),
+                ann_scores.get(user_id, '0')
+            ])
+        for row in data:
+            yield ','.join(map(str, row)) + '\n'
+
+    return Response(generate(), mimetype='text/csv', headers={
+        "Content-Disposition": "attachment; filename=resume_scores.csv"
+    })
+
+@app.route('/hr-login', methods=['GET', 'POST'])
+def hr_login():
+    if request.method == 'POST':
+        passcode = request.form.get('passcode')
+        if passcode == PASSCODE:
+            return redirect(url_for('hr_dashboard'))
+        return render_template('hr_login.html', error="Incorrect passcode!")
+    return render_template('hr_login.html')
+
+@app.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        passcode = request.form.get('passcode')
+        if passcode == PASSCODE:
+            return redirect(url_for('admin_page'))
+        return render_template('admin_login.html', error="Incorrect passcode!")
+    return render_template('admin_login.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
-
-def load_json(path):
-    if os.path.exists(path):
-        try:
-            with open(path, 'r') as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            print(f"[Warning] {path} is empty or corrupted. Resetting.")
-            return {}
-    return {}

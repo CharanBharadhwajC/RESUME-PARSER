@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HR Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="index">
+  <div class="card center">
+    <h2>HR Login</h2>
+    <form method="POST">
+      <input type="password" name="passcode" placeholder="Enter passcode" required>
+      <br><br>
+      <button type="submit" class="btn">Login</button>
+      {% if error %}
+        <p style="color: red;">{{ error }}</p>
+      {% endif %}
+    </form>
+  </div>
+</body>
+</html>
