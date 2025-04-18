@@ -15,28 +15,61 @@ async function uploadResume() {
 
 async function downloadFile() {
   const id = document.getElementById("accessId").value;
+  if (!id) {
+    document.getElementById("message").innerText = "Please enter a valid User ID.";
+    return;
+  }
   window.location = `/download/${id}`;
 }
 
 async function deleteFile() {
   const id = document.getElementById("accessId").value;
-  await fetch(`/delete/${id}`, { method: "DELETE" });
-  alert("Deleted successfully.");
+  if (!id) {
+    document.getElementById("message").innerText = "Please enter a valid User ID.";
+    return;
+  }
+
+  const res = await fetch(`/delete/${id}`, { method: "DELETE" });
+
+  if (res.status === 204) {
+    document.getElementById("message").innerText = "✅ File deleted successfully.";
+    document.getElementById("scoreDisplay").innerText = "";
+  } else if (res.status === 403) {
+    document.getElementById("message").innerText = "⚠️ Cannot delete. Resume already scored.";
+  } else {
+    document.getElementById("message").innerText = "❌ User ID not found.";
+  }
 }
 
 async function checkScore() {
   const id = document.getElementById("accessId").value;
-  const res = await fetch(`/getscore/${id}`);
-  const data = await res.json();
+  if (!id) {
+    document.getElementById("message").innerText = "Please enter a valid User ID.";
+    return;
+  }
 
-  const scoreText = data.score !== null ? `Score: ${data.score}/10` : "Not yet scored";
+  const res = await fetch(`/getscore/${id}`);
+  if (!res.ok) {
+    if (res.status === 404) {
+      document.getElementById("scoreDisplay").innerText = "";
+      document.getElementById("message").innerText = "❌ User ID not found. Try again.";
+    }
+    return;
+  }
+
+  const data = await res.json();
+  const scoreText = data.score !== null && data.score !== "Not yet scored"
+    ? `Score: ${data.score}/10`
+    : "Not yet scored";
   document.getElementById("scoreDisplay").innerText = scoreText;
 
   const messageEl = document.getElementById("message");
-  if (data.score !== null && parseFloat(data.score) > 7.5) {
+  if (data.score !== null && data.score !== "Not yet scored" && parseFloat(data.score) > 7.5) {
     messageEl.innerText = "✅ Congratulations! Your resume has received a high score. Mail us at vit.ac.in";
+  } else if (data.score !== null && data.score !== "Not yet scored") {
+    messageEl.innerText = "Sorry! Your resume does not meet our requirements.";
   } else {
-    messageEl.innerText = "Sorry! Your resume does not meet our requirements";
+    messageEl.innerText = "Awaiting HR review. Please check back later.";
   }
 }
 
@@ -69,6 +102,8 @@ function deleteResume(fileId) {
       if (res.status === 204) {
         alert("Deleted successfully.");
         location.reload();
+      } else if (res.status === 403) {
+        alert("Cannot delete. Resume already scored.");
       } else {
         alert("Failed to delete.");
       }

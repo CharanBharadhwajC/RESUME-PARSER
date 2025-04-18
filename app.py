@@ -8,28 +8,25 @@ from uploads.ann_predictor import predict_ann_score_from_resume
 
 app = Flask(__name__)
 
-# Constants
 UPLOAD_FOLDER = 'uploads'
 SCORES_FILE = 'scores.json'
 FUZZY_FILE = 'fuzzy_scores.json'
 ANN_FILE = 'ann_scores.json'
-PASSCODE = "VIT$$Welcome"
 
-# Ensure necessary directories exist
+HR_PASSCODE = "hr"
+ADMIN_PASSCODE = "admin"
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Safe JSON loader
 def load_json(path):
     if os.path.exists(path):
         try:
             with open(path, 'r') as f:
                 return json.load(f)
         except json.JSONDecodeError:
-            print(f"[Warning] {path} is empty or corrupted. Resetting.")
             return {}
     return {}
 
-# Load existing data
 scores = load_json(SCORES_FILE)
 fuzzy_scores = load_json(FUZZY_FILE)
 ann_scores = load_json(ANN_FILE)
@@ -42,8 +39,11 @@ def index():
 def user_page():
     return render_template('user.html')
 
-@app.route('/hr')
+@app.route('/hr', methods=['GET', 'POST'])
 def hr_dashboard():
+    if request.method == 'POST':
+        return redirect(url_for('hr_dashboard'))
+
     files = []
     for filename in os.listdir(UPLOAD_FOLDER):
         if os.path.isfile(os.path.join(UPLOAD_FOLDER, filename)):
@@ -70,13 +70,11 @@ def upload():
         file_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(file_path)
 
-        # Fuzzy score
         fuzzy = calculate_fuzzy_score(file_path)
         fuzzy_scores[uid] = fuzzy
         with open(FUZZY_FILE, 'w') as f:
             json.dump(fuzzy_scores, f)
 
-        # ANN score
         ann = predict_ann_score_from_resume(file_path)
         ann_scores[uid] = ann
         with open(ANN_FILE, 'w') as f:
@@ -94,6 +92,9 @@ def download(uid):
 
 @app.route('/delete/<uid>', methods=['DELETE'])
 def delete(uid):
+    if uid in scores:
+        return jsonify({'error': 'Resume already scored. Cannot delete.'}), 403
+
     deleted = False
     for fname in os.listdir(UPLOAD_FOLDER):
         if fname.startswith(uid):
@@ -101,7 +102,6 @@ def delete(uid):
             deleted = True
             break
 
-    # Remove from JSON
     for db, path in [(scores, SCORES_FILE), (fuzzy_scores, FUZZY_FILE), (ann_scores, ANN_FILE)]:
         db.pop(uid, None)
         with open(path, 'w') as f:
@@ -111,6 +111,8 @@ def delete(uid):
 
 @app.route('/getscore/<uid>')
 def get_score(uid):
+    if uid not in fuzzy_scores and uid not in ann_scores and uid not in scores:
+        return jsonify({'error': 'Invalid user ID'}), 404
     return jsonify({
         'score': scores.get(uid, 'Not yet scored'),
         'suggested': fuzzy_scores.get(uid, '0'),
@@ -156,18 +158,20 @@ def export_csv():
 def hr_login():
     if request.method == 'POST':
         passcode = request.form.get('passcode')
-        if passcode == PASSCODE:
+        if passcode == HR_PASSCODE:
             return redirect(url_for('hr_dashboard'))
-        return render_template('hr_login.html', error="Incorrect passcode!")
+        else:
+            return render_template('hr_login.html', error="Incorrect HR passcode!")
     return render_template('hr_login.html')
 
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
         passcode = request.form.get('passcode')
-        if passcode == PASSCODE:
+        if passcode == ADMIN_PASSCODE:
             return redirect(url_for('admin_page'))
-        return render_template('admin_login.html', error="Incorrect passcode!")
+        else:
+            return render_template('admin_login.html', error="Incorrect Admin passcode!")
     return render_template('admin_login.html')
 
 if __name__ == '__main__':
